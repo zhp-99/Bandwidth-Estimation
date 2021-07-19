@@ -36,7 +36,7 @@ class A2C(nn.Module):
     def forward(self, state):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         action, action_logprobs, entropy, value = self.actor_critic(state)
-        return action, action_logprobs, value
+        return action.detach(), action_logprobs, value
 
     def get_value(self, state):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
@@ -108,6 +108,7 @@ class A2C(nn.Module):
         torch.save(checkpoint, '{}a2c_{}.pth'.format(data_path, epoch))
 
 
+
 class Actor(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(Actor, self).__init__()
@@ -155,7 +156,7 @@ class Critic(nn.Module):
         )
     def forward(self, x):
         x = self.linear(x)
-        return x.view(1)
+        return x
 
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim):

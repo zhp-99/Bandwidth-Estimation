@@ -7,37 +7,37 @@ trigger:
   branches:
     include:
     - "*"
+    exclude:
+    - upstream/*
 
 
 pool:
-  vmImage: "ubuntu-latest"
-
+  vmImage: 'ubuntu-latest'
 
 steps:
+
 - checkout: self
-  submodules: true
 
 - script: |
-    sudo apt install -qq -y libzmq5 python3 python3-pip
-    python3 -m pip install -r gym/requirements.txt
-  displayName: "Install Gym runtime dependencies"
+    sudo apt install -y python3 python3-pip
+    python3 -m pip install torch pytest
+  displayName: "Install runtime dependencies"
 
-- script: python3 -m pip install -r requirements.txt
-  displayName: "Install exmaple dependencies"
+- script: |
+    python3 -m pytest tests
+  displayName: "Run test"
 
-- task: DownloadPipelineArtifact@2
-  inputs:
-    source: specific
-    project: ONL-github
-    pipeline: 6
-    artifact: target
-    runVersion: "latestFromBranch"
-    runBranch: "refs/heads/master"
-    path: "gym/target"
-  displayName: "Download Gym target"
+- script: docker pull opennetlab.azurecr.io/challenge-env
+  displayName: 'Get challenge environment'
 
-- script: chmod 777 gym/target/gym
-  displayName: "Grand execute permission to gym"
+- script: |
+    wget https://raw.githubusercontent.com/OpenNetLab/AlphaRTC/main/examples/peerconnection/serverless/corpus/receiver_pyinfer.json -O receiver_pyinfer.json
+    wget https://raw.githubusercontent.com/OpenNetLab/AlphaRTC/main/examples/peerconnection/serverless/corpus/sender_pyinfer.json -O sender_pyinfer.json
+    mkdir testmedia
+    wget https://github.com/OpenNetLab/AlphaRTC/raw/main/examples/peerconnection/serverless/corpus/testmedia/test.wav -O testmedia/test.wav
+    wget https://raw.githubusercontent.com/OpenNetLab/AlphaRTC/main/examples/peerconnection/serverless/corpus/testmedia/test.yuv -O testmedia/test.yuv
+  displayName: 'Fetch corpus'
 
-- script: python3 main.py
-  displayName: "Run main"
+- script: docker run -d --rm -v `pwd`:/app -w /app --name alphartc_pyinfer opennetlab.azurecr.io/challenge-env peerconnection_serverless receiver_pyinfer.json
+          && docker exec alphartc_pyinfer peerconnection_serverless sender_pyinfer.json
+  displayName: 'Run this example'
