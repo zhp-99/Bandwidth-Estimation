@@ -107,30 +107,6 @@ class A2C(nn.Module):
         }
         torch.save(checkpoint, '{}a2c_{}.pth'.format(data_path, epoch))
 
-class RNN_Actor(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden_size=64, num_layers=3):
-        super(RNN_Actor, self).__init__()
-        self.lstm = nn.LSTM(input_size=state_dim, hidden_size=hidden_size, bias=True, batch_first=True, bidirectional=True)
-        self.linear = nn.Linear(hidden_size, action_dim)
-        self.action_var = torch.full((action_dim,), 0.05 ** 2)
-
-    def forward(self, x):
-        device = x.device
-        x = self.linear(x)
-
-        #mean,std in [0,1]
-        mean = self.mean_linear(x)
-        cov_mat = torch.diag(self.action_var).to(device)
-
-        # print(mean)
-        # print(std)
-
-        dist = MultivariateNormal(mean, cov_mat)
-        action = dist.sample()
-        log_prob = dist.log_prob(action)
-        entropy = dist.entropy().mean()
-        return action, log_prob, entropy
-
 
 class Actor(nn.Module):
     def __init__(self, state_dim, action_dim):

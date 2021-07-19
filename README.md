@@ -11,3 +11,8 @@ Pretrained models are in
 ```
 ./data
 ```
+
+code for A2C is implemented in
+```
+./deep_rl/pg_agent.py
+```
